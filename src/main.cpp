@@ -2,20 +2,17 @@
 #include <avr/pgmspace.h>
 #include "pins.h"
 #include "timers.h"
+#include "module.hpp"
 
-// put function declarations here:
-int myFunction(int, int);
+Module A, B;
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  A = Module(&REG_TCC0_CC0, &REG_TCC0_CC2);
+  B = Module(&REG_TCC0_CC1, &REG_TCC0_CC3);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+  A.update_pri();
+  A.update_sec();
+  A.output();
 }
