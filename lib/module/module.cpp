@@ -32,7 +32,7 @@ Module::Module(RwReg* pri_output_reg, RwReg* sec_output_reg):
     sec_reg {sec_output_reg}
 {}
 
-uint64_t asym_lin_map(uint16_t x, int low, int mid, int high) {
+uint64_t asym_lin_map(uint16_t x, uint32_t low, uint32_t mid, uint32_t high) {
   if (x <= 0) return low;
   if (x < H) return (x * (mid - low) >> 8) + low;
   if (x == H) return mid;
