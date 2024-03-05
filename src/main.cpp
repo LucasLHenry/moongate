@@ -1,4 +1,7 @@
 #include <Arduino.h>
+#include <avr/pgmspace.h>
+#include "pins.h"
+#include "timers.h"
 
 // put function declarations here:
 int myFunction(int, int);
