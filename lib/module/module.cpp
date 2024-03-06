@@ -2,6 +2,7 @@
 #include <avr/pgmspace.h>
 
 #include "exponential.h"
+#include "waveform_generator.hpp"
 
 #include "module.hpp"
 
@@ -32,32 +33,8 @@ Module::Module(RwReg* pri_output_reg, RwReg* sec_output_reg):
     sec_reg {sec_output_reg}
 {}
 
-uint64_t asym_lin_map(uint16_t x, uint32_t low, uint32_t mid, uint32_t high) {
-  if (x <= 0) return low;
-  if (x < H) return (x * (mid - low) >> 8) + low;
-  if (x == H) return mid;
-  if (x > H) return ((x - H) * (high - mid) >> 8) + mid;
-  if (x >= M) return high;
-  return mid;
-}
-
 void Module::update_pri() {
-    uint16_t s_acc {(uint16_t)(acc >> 23)};
-    uint32_t linval {0};
-    uint32_t expval {0};
-    uint32_t logval {0};
-
-    if (s_acc < ratio) {
-        linval = upslope * s_acc;
-        expval = pgm_read_word_near(exptable + (linval >> 7));
-        logval = (M << 7) - pgm_read_word_near(exptable + (upslope * (ratio - s_acc) >> 7));
-    } else {
-        linval = downslope * (M - s_acc);
-        expval = pgm_read_word_near(exptable + (linval >> 7));
-        logval = (M << 7) - pgm_read_word_near(exptable + (downslope * (s_acc - ratio) >> 7));
-    }
-
-    pri_val = asym_lin_map(shape, expval, linval, logval);
+    pri_val = generate_wave(acc, ratio, shape, upslope, downslope);
 }
 
 void Module::update_sec(Module* other) {
