@@ -60,7 +60,7 @@ void Module::update_pri() {
     pri_val = asym_lin_map(shape, expval, linval, logval);
 }
 
-void Module::update_sec() {
+void Module::update_sec(Module* other) {
     sec_val = pri_val;
 }
 

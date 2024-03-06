@@ -1,6 +1,7 @@
 // pin assignments for the SAM D21
 // use these names to refer to them
 #pragma once
+#include <FastLED.h>
 
 
 #define LIN_TIME_A A6
@@ -17,8 +18,9 @@
 #define SEC_OUT_B 12  // same as above
 #define TRIG_OUT_B 6
 
-#define LEDs 2
-#define NUM_LEDs 23
+#define LED_DATA 2
+#define NUM_LEDS 23
+#define LED_TYPE NEOPIXEL
 #define ALGO_ENC_1 5
 #define ALGO_ENC_2 11
 #define ALGO_BTN 13

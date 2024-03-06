@@ -16,7 +16,7 @@ class Module {
         Module();
         Module(RwReg* pri_output_reg, RwReg* sec_output_reg);
         void update_pri();
-        void update_sec();
+        void update_sec(Module* other);
         void output();
 };
 
