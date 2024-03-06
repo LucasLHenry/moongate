@@ -23,8 +23,8 @@ void loop() {
 void TCC0_Handler() 
 {
   if (TCC0->INTFLAG.bit.CNT == 1) {
-    A.acc += A.phasor;
-    B.acc += B.phasor;
+    A.accumulate();
+    B.accumulate();
     delayMicroseconds(4);  // modify to deal with weird spikes
     A.update_pri();
     B.update_pri();

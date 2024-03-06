@@ -27,14 +27,21 @@ Module::Module(RwReg* pri_output_reg, RwReg* sec_output_reg):
     upslope {UPSLOPE(INIT_RATIO)},
     downslope {DOWNSLOPE(INIT_RATIO)},
     mode {LFO},
-    acc {0},
-    phasor {0},
+    p_acc {0},
+    p_phasor {0},
+    s_acc {0},
+    s_phasor {0},
     pri_reg {pri_output_reg},
     sec_reg {sec_output_reg}
 {}
 
+void Module::accumulate() {
+    p_acc += p_phasor;
+    s_acc += s_phasor;
+}
+
 void Module::update_pri() {
-    pri_val = generate_wave(acc, ratio, shape, upslope, downslope);
+    pri_val = generate_wave(p_acc, ratio, shape, upslope, downslope);
 }
 
 void Module::update_sec(Module* other) {
