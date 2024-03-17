@@ -20,9 +20,10 @@
 
 #define LED_DATA 2
 #define NUM_LEDS 23
+#define NUM_RING_LEDS 16
 #define LED_TYPE NEOPIXEL
-#define ALGO_ENC_1 5
-#define ALGO_ENC_2 11
+#define ALGO_ENC_1 11
+#define ALGO_ENC_2 5
 #define ALGO_BTN 13
 #define FLW_BTN 7
 

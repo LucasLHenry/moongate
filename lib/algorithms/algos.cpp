@@ -6,9 +6,9 @@
 #define M16 65535
 #define H16 32767
 
-uint16_t rectify(Module* main, Module* aux) {
+// uint16_t rectify(Module* main, Module* aux) {
 
-}
+// }
 
 uint16_t sum(Module* main, Module* aux) {
     return (main->pri_val + aux->pri_val) >> 1;
@@ -41,13 +41,13 @@ uint16_t invert(Module* main, Module* aux) {
     return M16 - main->pri_val;
 }
 
-uint16_t double_freq(Module* main, Module* aux) {
+// uint16_t double_freq(Module* main, Module* aux) {
     
-}
+// }
 
-uint16_t half_freq(Module* main, Module* aux) {
+// uint16_t half_freq(Module* main, Module* aux) {
 
-}
+// }
 
 uint16_t clip(Module* main, Module* aux) {
     #define CLIP_LVL 50000
@@ -56,9 +56,9 @@ uint16_t clip(Module* main, Module* aux) {
     #undef CLIP_LVL
 }
 
-uint16_t saturate(Module* main, Module* aux) {
+// uint16_t saturate(Module* main, Module* aux) {
 
-}
+// }
 
 uint16_t ring_modulate(Module* main, Module* aux) {
     return (uint16_t)((main->pri_val * (uint64_t)aux->pri_val) >> 16);
