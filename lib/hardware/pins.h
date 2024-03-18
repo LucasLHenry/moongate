@@ -22,6 +22,16 @@
 #define NUM_LEDS 23
 #define NUM_RING_LEDS 16
 #define LED_TYPE NEOPIXEL
+#define FLW_LED 16
+#define TRIG_B_LED 17
+#define PRI_B_LED 18
+#define SEC_B_LED 19
+#define SEC_A_LED 20
+#define PRI_A_LED 21
+#define TRIG_A_LED 22
+
+
+
 #define ALGO_ENC_1 11
 #define ALGO_ENC_2 5
 #define ALGO_BTN 13

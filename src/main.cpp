@@ -1,29 +1,21 @@
 #include <Arduino.h>
 // #include <avr/pgmspace.h>
 #include "pins.h"
-// #include "timers.h"
-// #include "module.hpp"
+#include "colours.h"
+#include "timers.h"
+#include "module.hpp"
 #include <Adafruit_NeoPixel.h>
 #include <Encoder.h>
 #include <OneButton.h>
+#include <SAMD21turboPWM.h>
+
+#define HZPHASOR 91183 //phasor value for 1 hz.
 
 // Module A, B;
 
-#define ORANGE    0xFF7000
-#define RED       0xFF0000
-#define WHITE     0xFFFFFF
-#define BLACK     0x000000
-#define TURQUOISE 0x00FFFF
-#define PINK      0xFF00FF
-#define PLORANGE  0xBF3880
-#define PURPLE    0x7F00FF
-
-Adafruit_NeoPixel strip(NUM_LEDS, LED_DATA, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel leds(NUM_LEDS, LED_DATA, NEO_GRB + NEO_KHZ800);
 
 Encoder enc(ALGO_ENC_1, ALGO_ENC_2);
-long int enc_pos = 0;
-long int new_enc_pos = 0;
-long int enc_change = 0;
 long int enc_a_pos, enc_b_pos;
 int active_a, active_b;
 #define ENC_DIV 2
@@ -31,75 +23,122 @@ int active_a, active_b;
 OneButton enc_btn(ALGO_BTN, true, true);
 bool enc_a_is_active = true;
 
+TurboPWM pwm;
+
 static void handle_enc_btn_press();
+static void show_leds();
+static void update_encoder();
+
+long unsigned int accumulator1 = 0;
+long unsigned int phasor1 = 0;
 
 void setup() {
-  // A = Module(&REG_TCC0_CC0, &REG_TCC0_CC2);
-  // B = Module(&REG_TCC0_CC1, &REG_TCC0_CC3);
-  // set pin modes
+    pinMode(1, OUTPUT);
+    pinMode(9, OUTPUT);
+    pinMode(2, OUTPUT);
+    pinMode(3, OUTPUT);
+    pinMode(13, OUTPUT);
+    // A = Module(&REG_TCC0_CC0, &REG_TCC0_CC2);
+    // B = Module(&REG_TCC0_CC1, &REG_TCC0_CC3);
+    // set pin modes
 
-  Serial.begin(9600);
-  // some sort of LED light sequence on startup would be cool
+    pwm.setClockDivider(200, false);
+    pwm.timer(0, 1, 0xFFFFFF, true);
+    pwm.analogWrite(3, 500);
+    pwm.enable(0, true);
 
-  //setupTimers(); // calls TCC0_Handler at 48kHz
-  strip.begin();
-  strip.show();
+    Serial.begin(9600);
+    // some sort of LED light sequence on startup would be cool
 
-  enc_btn.attachClick(handle_enc_btn_press);
+    setupTimers(); // calls TCC0_Handler at 48kHz
+    leds.begin();
+    leds.show();
+
+    enc_btn.attachClick(handle_enc_btn_press);
 }
 
 void loop() {
-  enc_btn.tick();
+    enc_btn.tick();
 
-  // encoder
-  new_enc_pos = enc.read();
-  enc_change = new_enc_pos - enc_pos;
-  enc_pos = new_enc_pos;
-  if (enc_a_is_active) {
-    enc_a_pos += enc_change;
-    active_a = (enc_a_pos >> ENC_DIV) % NUM_RING_LEDS;
-    if (active_a < 0) 
-      active_a += 16;
-  } else {
-    enc_b_pos += enc_change;
-    active_b = (enc_b_pos >> ENC_DIV) % NUM_RING_LEDS;
-    if (active_b < 0) 
-      active_b += 16;
-  }
-  
+    // encoder
+    // new_enc_pos = enc.read();
+    // enc_change = new_enc_pos - enc_pos;
+    // enc_pos = new_enc_pos;
+    // if (enc_a_is_active) {
+    //     enc_a_pos += enc_change;
+    //     active_a = (enc_a_pos >> ENC_DIV) % NUM_RING_LEDS;
+    //     if (active_a < 0) 
+    //     active_a += 16;
+    // } else {
+    //     enc_b_pos += enc_change;
+    //     active_b = (enc_b_pos >> ENC_DIV) % NUM_RING_LEDS;
+    //     if (active_b < 0) 
+    //     active_b += 16;
+    // }
+    update_encoder();
 
-  // LEDs
-  if (active_a == active_b) {
-    for (int i = 0; i < NUM_RING_LEDS; i++) {
-      if (i == active_a) strip.setPixelColor(i, PLORANGE);
-      else strip.setPixelColor(i, BLACK);
-    }
-  } else {
-    for (int i = 0; i < NUM_RING_LEDS; i++) {
-      if (i == active_a) strip.setPixelColor(i, ORANGE);
-      else if (i == active_b) strip.setPixelColor(i, PURPLE);
-      else strip.setPixelColor(i, BLACK);
-    }
-  }
-  strip.show();
+    show_leds();
+    
+    phasor1 = 120 * HZPHASOR;
 }
 
 static void handle_enc_btn_press() {
-  enc_a_is_active = (enc_a_is_active)? false : true;
+    enc_a_is_active = (enc_a_is_active)? false : true;
 }
 
-// void TCC0_Handler() 
-// {
-//   if (TCC0->INTFLAG.bit.CNT == 1) {
-//     A.accumulate();
-//     B.accumulate();
-//     delayMicroseconds(4);  // modify to deal with weird spikes
-//     A.update_pri();
-//     B.update_pri();
-//     A.update_sec(&B);
-//     B.update_sec(&A);
-//     A.output();
-//     B.output();
-//     TCC0->INTFLAG.bit.CNT = 1;
-//   }
-// }
+void TCC0_Handler() 
+{
+    if (TCC0->INTFLAG.bit.CNT == 1) {
+        // A.accumulate();
+        // // B.accumulate();
+        // delayMicroseconds(4);  // modify to deal with weird spikes
+        // A.update_pri();
+        // // B.update_pri();
+        // // A.update_sec(&B);
+        // // B.update_sec(&A);
+        // REG_TCC0_CC0 = 511 - (A.pri_val >> 7);
+        accumulator1 += phasor1;
+        delayMicroseconds(6);
+        REG_TCC0_CC0 = 511 - (accumulator1 >> 23);
+        TCC0->INTFLAG.bit.CNT = 1;
+    }
+}
+
+
+static void update_encoder() {
+    // untested! might not actually work
+    static long int enc_pos {0};
+    static long int new_enc_pos = enc.read();
+    static long int enc_change = new_enc_pos - enc_pos;
+    enc_pos = new_enc_pos;
+    if (enc_a_is_active) {
+        enc_a_pos += enc_change;
+        active_a = (enc_a_pos >> ENC_DIV) % NUM_RING_LEDS;
+        if (active_a < 0) 
+        active_a += 16;
+    } else {
+        enc_b_pos += enc_change;
+        active_b = (enc_b_pos >> ENC_DIV) % NUM_RING_LEDS;
+        if (active_b < 0) 
+        active_b += 16;
+    }
+}
+
+
+static void show_leds() {
+    // show ring LEDs
+    if (active_a == active_b) {
+        for (int i = 0; i < NUM_RING_LEDS; i++) {
+            if (i == active_a) leds.setPixelColor(i, PLORANGE);
+            else leds.setPixelColor(i, BLACK);
+        }
+    } else {
+        for (int i = 0; i < NUM_RING_LEDS; i++) {
+            if (i == active_a) leds.setPixelColor(i, ORANGE);
+            else if (i == active_b) leds.setPixelColor(i, PURPLE);
+            else leds.setPixelColor(i, BLACK);
+        }
+    }
+    // show signal indicator LEDs
+    leds.show();
+}

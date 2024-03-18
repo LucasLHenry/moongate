@@ -41,7 +41,8 @@ void Module::accumulate() {
 }
 
 void Module::update_pri() {
-    pri_val = generate_wave(p_acc, ratio, shape, upslope, downslope);
+    //pri_val = generate_wave(p_acc, ratio, shape, upslope, downslope);
+    pri_val = generate_saw(p_acc);
 }
 
 void Module::update_sec(Module* other) {
