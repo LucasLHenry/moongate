@@ -18,12 +18,13 @@ Adafruit_NeoPixel leds(NUM_LEDS, LED_DATA, NEO_GRB + NEO_KHZ800);
 Encoder enc(ALGO_ENC_1, ALGO_ENC_2);
 long int enc_a_pos, enc_b_pos;
 int active_a, active_b;
+long int enc_pos, new_enc_pos, enc_change;
 #define ENC_DIV 2
 
 OneButton enc_btn(ALGO_BTN, true, true);
 bool enc_a_is_active = true;
 
-TurboPWM pwm;
+//TurboPWM pwm;
 
 static void handle_enc_btn_press();
 static void show_leds();
@@ -32,20 +33,23 @@ static void update_encoder();
 long unsigned int accumulator1 = 0;
 long unsigned int phasor1 = 0;
 
+bool trig_val {false};
+
 void setup() {
     pinMode(1, OUTPUT);
     pinMode(9, OUTPUT);
     pinMode(2, OUTPUT);
     pinMode(3, OUTPUT);
     pinMode(13, OUTPUT);
+    pinMode(TRIG_OUT_A, OUTPUT);
     // A = Module(&REG_TCC0_CC0, &REG_TCC0_CC2);
     // B = Module(&REG_TCC0_CC1, &REG_TCC0_CC3);
     // set pin modes
 
-    pwm.setClockDivider(200, false);
-    pwm.timer(0, 1, 0xFFFFFF, true);
-    pwm.analogWrite(3, 500);
-    pwm.enable(0, true);
+    // pwm.setClockDivider(200, false);
+    // pwm.timer(0, 1, 0xFFFFFF, true);
+    // pwm.analogWrite(3, 500);
+    // pwm.enable(0, true);
 
     Serial.begin(9600);
     // some sort of LED light sequence on startup would be cool
@@ -79,11 +83,14 @@ void loop() {
 
     show_leds();
     
-    phasor1 = 120 * HZPHASOR;
+    phasor1 = 100 * HZPHASOR;
+    digitalWrite(TRIG_OUT_A, (trig_val)? HIGH : LOW);
+    // Serial.println(511- (accumulator1 >> 23));
 }
 
 static void handle_enc_btn_press() {
-    enc_a_is_active = (enc_a_is_active)? false : true;
+    enc_a_is_active = !enc_a_is_active;
+    trig_val = !trig_val;
 }
 
 void TCC0_Handler() 
@@ -98,18 +105,15 @@ void TCC0_Handler()
         // // B.update_sec(&A);
         // REG_TCC0_CC0 = 511 - (A.pri_val >> 7);
         accumulator1 += phasor1;
-        delayMicroseconds(6);
-        REG_TCC0_CC0 = 511 - (accumulator1 >> 23);
+        delayMicroseconds(4);
+        REG_TCC0_CC2 = 511 - (accumulator1 >> 23);
         TCC0->INTFLAG.bit.CNT = 1;
     }
 }
 
-
 static void update_encoder() {
-    // untested! might not actually work
-    static long int enc_pos {0};
-    static long int new_enc_pos = enc.read();
-    static long int enc_change = new_enc_pos - enc_pos;
+    new_enc_pos = enc.read();
+    enc_change = new_enc_pos - enc_pos;
     enc_pos = new_enc_pos;
     if (enc_a_is_active) {
         enc_a_pos += enc_change;
