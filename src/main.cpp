@@ -8,6 +8,7 @@
 #include <Encoder.h>
 #include <OneButton.h>
 #include <SAMD21turboPWM.h>
+#include <Mux.h>
 
 #define HZPHASOR 91183 //phasor value for 1 hz.
 
@@ -24,7 +25,11 @@ long int enc_pos, new_enc_pos, enc_change;
 OneButton enc_btn(ALGO_BTN, true, true);
 bool enc_a_is_active = true;
 
-//TurboPWM pwm;
+using namespace admux;
+Mux a_mux(admux::Pin(MUX_A, INPUT, PinType::Analog), Pinset(MUX_S0, MUX_S1, MUX_S2));
+Mux b_mux(admux::Pin(MUX_B, INPUT, PinType::Analog), Pinset(MUX_S0, MUX_S1, MUX_S2));
+
+
 
 static void handle_enc_btn_press();
 static void show_leds();
@@ -41,7 +46,7 @@ void setup() {
     pinMode(2, OUTPUT);
     pinMode(3, OUTPUT);
     pinMode(13, OUTPUT);
-    pinMode(TRIG_OUT_A, OUTPUT);
+    // pinMode(TRIG_OUT_A, OUTPUT);
     // A = Module(&REG_TCC0_CC0, &REG_TCC0_CC2);
     // B = Module(&REG_TCC0_CC1, &REG_TCC0_CC3);
     // set pin modes
@@ -84,7 +89,7 @@ void loop() {
     show_leds();
     
     phasor1 = 100 * HZPHASOR;
-    digitalWrite(TRIG_OUT_A, (trig_val)? HIGH : LOW);
+    // digitalWrite(TRIG_OUT_A, (trig_val)? HIGH : LOW);
     // Serial.println(511- (accumulator1 >> 23));
 }
 
