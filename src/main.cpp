@@ -1,19 +1,17 @@
 #include <Arduino.h>
-// #include <avr/pgmspace.h>
 #include "pins.h"
 #include "colours.h"
 #include "timers.h"
 #include "module.hpp"
-// #include <Adafruit_NeoPixel.h>
+#include "waveform_generator.hpp"
 #include <Encoder.h>
 #include <OneButton.h>
-#include <SAMD21turboPWM.h>
 #include <Mux.h>
 #include <FastLED.h>
 
 #define HZPHASOR 91183 //phasor value for 1 hz.
 
-// Module A, B;
+Module A, B;
 
 // Adafruit_NeoPixel leds(NUM_LEDS, LED_DATA, NEO_GRB + NEO_KHZ800);
 CRGB leds[NUM_LEDS];
@@ -49,7 +47,7 @@ void setup() {
     // pinMode(3, OUTPUT);
     // pinMode(13, OUTPUT);
     // pinMode(TRIG_OUT_A, OUTPUT);
-    // A = Module(&REG_TCC0_CC0, &REG_TCC0_CC2);
+    A = Module();
     // B = Module(&REG_TCC0_CC1, &REG_TCC0_CC3);
     // set pin modes
 
@@ -60,6 +58,8 @@ void setup() {
     FastLED.addLeds<SK6812, LED_DATA, GRB>(leds, NUM_LEDS);
 
     enc_btn.attachClick(handle_enc_btn_press);
+    A.p_phasor = 100 * HZPHASOR;
+    phasor1 = 100 * HZPHASOR;
 }
 
 void loop() {
@@ -67,9 +67,10 @@ void loop() {
     update_encoder();
     show_leds();
     
-    phasor1 = 100 * HZPHASOR;
     // digitalWrite(TRIG_OUT_A, (trig_val)? HIGH : LOW);
     // Serial.println(511- (accumulator1 >> 23));
+    generate_wave(&A, true);
+    A.accumulate();
 }
 
 static void handle_enc_btn_press() {
@@ -89,8 +90,12 @@ void TCC0_Handler()
         // // B.update_sec(&A);
         // REG_TCC0_CC0 = 511 - (A.pri_val >> 7);
         accumulator1 += phasor1;
+        //
         delayMicroseconds(4);
-        REG_TCC0_CC2 = 511 - (accumulator1 >> 23);
+        // REG_TCC0_CC2 = 1023 - (generate_wave(&A, true) >> 6);
+        REG_TCC0_CC2 = 1023 - generate_saw(accumulator1);
+                //delayMicroseconds(4);
+        while (TCC0->SYNCBUSY.bit.CC2);
         TCC0->INTFLAG.bit.CNT = 1;
     }
 }
@@ -111,25 +116,6 @@ static void update_encoder() {
         active_b += 16;
     }
 }
-
-
-// static void show_leds() {
-//     // show ring LEDs
-//     if (active_a == active_b) {
-//         for (int i = 0; i < NUM_RING_LEDS; i++) {
-//             if (i == active_a) leds.setPixelColor(i, PLORANGE);
-//             else leds.setPixelColor(i, BLACK);
-//         }
-//     } else {
-//         for (int i = 0; i < NUM_RING_LEDS; i++) {
-//             if (i == active_a) leds.setPixelColor(i, ORANGE);
-//             else if (i == active_b) leds.setPixelColor(i, PURPLE);
-//             else leds.setPixelColor(i, BLACK);
-//         }
-//     }
-//     // show signal indicator LEDs
-//     leds.show();
-// }
 
 static void show_leds() {
     // show ring LEDs
