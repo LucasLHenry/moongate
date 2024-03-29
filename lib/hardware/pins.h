@@ -52,11 +52,11 @@
 #define EXP_CV_A 7
 
 // mux B assignments
-#define R_CV_A   1
-#define R_POT_A  2
-#define S_CV_A   0
-#define S_POT_A  3
-#define M_CV_A   4
-#define SW_1_A   5
-#define SW_2_A   6
-#define EXP_CV_A 7
+#define R_CV_B   1
+#define R_POT_B  2
+#define S_CV_B   0
+#define S_POT_B  3
+#define M_CV_B   4
+#define SW_1_B   5
+#define SW_2_B   6
+#define EXP_CV_B 7

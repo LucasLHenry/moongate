@@ -20,6 +20,9 @@
 #define H 255
 #define UPSLOPE(x) ((M << 7) / x)
 #define DOWNSLOPE(x) ((M << 7) / (M - x))
+#define MAX(a, b) (((a) > (b))? (a) : (b))
+#define MIN(a, b) (((a) < (b))? (a) : (b))
+#define CLIP(x, a, b) MAX(MIN(x, b), a)
 
 // Module A, B;
 
@@ -49,7 +52,7 @@ typedef struct Module {
     unsigned long int acc;
     unsigned long int phasor;
     Mode mode;
-    unsigned short int slope;
+    unsigned short int ratio;
     unsigned short int shape;
     unsigned long int upslope;
     unsigned long int downslope;
@@ -79,12 +82,24 @@ void setup() {
 }
 
 
-uint32_t rat_pot, shp_pot, rat_cv, shp_cv;
+uint32_t rat_pot, shp_pot, rat_cv, shp_cv, new_r, new_s;
 void loop() {
-    enc_btn.tick();
-    update_encoder();
+    // enc_btn.tick();
+    // update_encoder();
     // show_leds();
-    // rat_pot = a_mux.read()
+    rat_pot = a_mux.read(R_POT_A) >> 1;
+    rat_cv = (a_mux.read(R_CV_A) - M) >> 1;
+    new_r = CLIP(rat_pot + rat_cv, 1, 510);
+    if (new_r >> 1 != m.ratio) {
+        m.ratio = new_r;
+        m.upslope = UPSLOPE(m.ratio);
+        m.downslope = DOWNSLOPE(m.ratio);
+    }
+
+    shp_pot = a_mux.read(S_POT_A) >> 1;
+    shp_cv = (a_mux.read(S_CV_A) - M) >> 1;
+    new_s = CLIP(shp_pot + shp_cv, 1, 510);
+    if (new_s >> 1 != m.shape) m.shape = new_s;
 }
 
 static void handle_enc_btn_press() {
@@ -106,14 +121,14 @@ unsigned short int generator() {
     uint32_t linval = 0;
     uint32_t expval = 0;
     uint32_t logval = 0;
-    if (shifted_acc < m.slope) {
+    if (shifted_acc < m.ratio) {
         linval = m.upslope * shifted_acc;
         expval = pgm_read_word_near(exptable + (linval >> 7));
-        logval = (M << 7) - pgm_read_word_near(exptable + (m.upslope * (m.slope - shifted_acc) >> 7));
+        logval = (M << 7) - pgm_read_word_near(exptable + (m.upslope * (m.ratio - shifted_acc) >> 7));
     } else {
         linval = m.downslope * (M - shifted_acc);
         expval = pgm_read_word_near(exptable + (linval >> 7));
-        logval = (M << 7) - pgm_read_word_near(exptable + (m.downslope * (shifted_acc - m.slope) >> 7));
+        logval = (M << 7) - pgm_read_word_near(exptable + (m.downslope * (shifted_acc - m.ratio) >> 7));
     }
     return asym_lin_map(m.shape, expval, linval, logval) >> 6;
 }
