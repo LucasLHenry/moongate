@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#define ENCODER_DO_NOT_USE_INTERRUPTS  // comment out if missing ticks
 #include <Encoder.h>
 #include <OneButton.h>
 #include <Mux.h>
@@ -28,7 +29,6 @@
 
 CRGB leds[NUM_LEDS];
 
-#define ENCODER_DO_NOT_USE_INTERRUPTS  // comment out if missing ticks
 Encoder enc(ALGO_ENC_1, ALGO_ENC_2);
 long int enc_a_pos, enc_b_pos;
 int active_a, active_b;
@@ -82,23 +82,23 @@ void setup() {
 }
 
 
-uint32_t rat_pot, shp_pot, rat_cv, shp_cv, new_r, new_s;
+int32_t rat_pot, shp_pot, rat_cv, shp_cv, new_r, new_s;
 void loop() {
-    // enc_btn.tick();
-    // update_encoder();
+    enc_btn.tick();
+    update_encoder();
     // show_leds();
     rat_pot = a_mux.read(R_POT_A) >> 1;
     rat_cv = (a_mux.read(R_CV_A) - M) >> 1;
-    new_r = CLIP(rat_pot + rat_cv, 1, 510);
+    new_r = CLIP(rat_pot + rat_cv, 0, 511);
     if (new_r >> 1 != m.ratio) {
         m.ratio = new_r;
-        m.upslope = UPSLOPE(m.ratio);
-        m.downslope = DOWNSLOPE(m.ratio);
+        if (m.ratio != 0) m.upslope = UPSLOPE(m.ratio);
+        if (m.ratio != 511) m.downslope = DOWNSLOPE(m.ratio);
     }
 
     shp_pot = a_mux.read(S_POT_A) >> 1;
     shp_cv = (a_mux.read(S_CV_A) - M) >> 1;
-    new_s = CLIP(shp_pot + shp_cv, 1, 510);
+    new_s = CLIP(shp_pot + shp_cv, 0, 511);
     if (new_s >> 1 != m.shape) m.shape = new_s;
 }
 
@@ -115,12 +115,10 @@ int asym_lin_map(uint16_t x, int low, int mid, int high) {
     return high;
 }
 
+uint32_t linval, expval, logval;
+uint64_t shifted_acc;
 unsigned short int generator() {
-    unsigned int shifted_acc = m.acc>>23;
-
-    uint32_t linval = 0;
-    uint32_t expval = 0;
-    uint32_t logval = 0;
+    shifted_acc = m.acc>>23;
     if (shifted_acc < m.ratio) {
         linval = m.upslope * shifted_acc;
         expval = pgm_read_word_near(exptable + (linval >> 7));
@@ -133,16 +131,12 @@ unsigned short int generator() {
     return asym_lin_map(m.shape, expval, linval, logval) >> 6;
 }
 
+
 void TCC0_Handler() 
 {
     if (TCC0->INTFLAG.bit.CNT == 1) {
         m.acc += m.phasor;
-        //
-        delayMicroseconds(4);
-        // REG_TCC0_CC2 = 1023 - (generate_wave(&A, true) >> 6);
-        REG_TCC0_CC2 = 1023 - generator();
-                //delayMicroseconds(4);
-        while (TCC0->SYNCBUSY.bit.CC2);
+        REG_TCC0_CCB2 = 1023 - generator();
         TCC0->INTFLAG.bit.CNT = 1;
     }
 }
@@ -168,13 +162,13 @@ static void show_leds() {
     // show ring LEDs
     if (active_a == active_b) {
         for (int i = 0; i < NUM_RING_LEDS; i++) {
-            if (i == active_a) leds[i] =  PLORANGE;
+            if (i == active_a) leds[i] =  PURPLE;
             else leds[i] = BLACK;
         }
     } else {
         for (int i = 0; i < NUM_RING_LEDS; i++) {
-            if (i == active_a) leds[i] = ORANGE;
-            else if (i == active_b) leds[i] = PURPLE;
+            if (i == active_a) leds[i] = RED;
+            else if (i == active_b) leds[i] = BLUE;
             else leds[i] = BLACK;
         }
     }

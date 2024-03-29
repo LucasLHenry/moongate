@@ -6,3 +6,4 @@
 #define PINK      0xFF00FF
 #define PLORANGE  0xBF3880
 #define PURPLE    0x7F00FF
+#define BLUE      0x0000FF
