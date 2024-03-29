@@ -40,3 +40,23 @@
 #define MUX_S0 3
 #define MUX_S1 1
 #define MUX_S2 0
+
+// mux A assignments
+#define R_CV_A   3
+#define R_POT_A  0
+#define S_CV_A   2
+#define S_POT_A  1
+#define M_CV_A   4
+#define SW_1_A   5
+#define SW_2_A   6
+#define EXP_CV_A 7
+
+// mux B assignments
+#define R_CV_A   1
+#define R_POT_A  2
+#define S_CV_A   0
+#define S_POT_A  3
+#define M_CV_A   4
+#define SW_1_A   5
+#define SW_2_A   6
+#define EXP_CV_A 7
